@@ -116,7 +116,7 @@ def count_stone(board):
     return black, white
 
 
-class PenguinAI:
+class PenguinAI(object):
     def face(self):
         return "🐧"
 
