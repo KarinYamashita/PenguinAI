@@ -68,7 +68,7 @@ def random_place(board, stone):
         if can_place_x_y(board, stone, x, y):
             return x, y
 
-def copy(board):
+def copy_board(board):
     """
     盤面をコピーする関数。
     board: 2次元配列のオセロボード
@@ -84,12 +84,12 @@ def move_stone(board, stone, x, y):
     stone: 現在のプレイヤーの石 (1: 黒, 2: 白)
     return:
     """
-    moves = [copy(board)]*3
+    moves = [copy_board(board)]*3
     if not can_place_x_y(board, stone, x, y):
         return moves  # 置けない場合は何もしない
 
     board[y][x] = stone  # 石を置く
-    moves.append(copy(board))
+    moves.append(copy_board(board))
     opponent = 3 - stone
     directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
     flipped_count = 0
@@ -106,7 +106,7 @@ def move_stone(board, stone, x, y):
         if stones_to_flip and 0 <= nx < len(board[0]) and 0 <= ny < len(board) and board[ny][nx] == stone:
             for flip_x, flip_y in stones_to_flip:
                 board[flip_y][flip_x] = stone
-                moves.append(copy(board))
+                moves.append(copy_board(board))
                 flipped_count += 1
 
     return moves
@@ -224,7 +224,7 @@ def run_othello(blackai=None, whiteai=None, board=None):
         moved = False
         if can_place(board, BLACK):
             start = time.time()
-            x, y = blackai.place(copy(board), BLACK)
+            x, y = blackai.place(copy_board(board), BLACK)
             black_time += time.time() - start
             if not can_place_x_y(board, BLACK, x, y):
                 print(f'{blackai.face()}は、置けないところに置こうとしました', (x, y))
@@ -239,7 +239,7 @@ def run_othello(blackai=None, whiteai=None, board=None):
 
         if can_place(board, WHITE):
             start = time.time()
-            x, y = whiteai.place(copy(board), WHITE)
+            x, y = whiteai.place(copy_board(board), WHITE)
             white_time += time.time() - start
             if not can_place_x_y(board, WHITE, x, y):
                 print(f'{whiteai.face()}は、置けないところに置こうとしました', (x, y))
