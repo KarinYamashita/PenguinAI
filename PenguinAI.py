@@ -2,6 +2,7 @@
 import math
 import random
 import time
+import copy
 
 BLACK=1
 WHITE=2
@@ -115,62 +116,70 @@ def count_stone(board):
     white = sum(row.count(WHITE) for row in board)
     return black, white
 
-
-class PenguinAI(object):
+class PenguinAI:
     def face(self):
         return "🐧"
 
+    def alpha_beta_score(self, state, stone, alpha, beta, depth):
+        """
+        Alpha-Beta法でスコアを計算
+        """
+        if depth == 0 or not can_place(state, stone):
+            # 深さが0、または石を置けない場合は盤面スコアを返す
+            return self.evaluate_state(state, stone)
+
+        legal_actions = self.get_legal_actions(state, stone)
+        for action in legal_actions:
+            next_state = copy.deepcopy(state)
+            move_stone(next_state, stone, action[0], action[1])  # 状態を進める
+            score = -self.alpha_beta_score(next_state, 3 - stone, -beta, -alpha, depth - 1)
+            if score > alpha:
+                alpha = score
+            if alpha >= beta:
+                return alpha
+        return alpha
+
+    def alpha_beta_action(self, state, stone, depth):
+        """
+        Alpha-Beta法で最善手を決定
+        """
+        best_action = None
+        alpha = -math.inf
+
+        legal_actions = self.get_legal_actions(state, stone)
+        for action in legal_actions:
+            next_state = copy.deepcopy(state)
+            move_stone(next_state, stone, action[0], action[1])  # 状態を進める
+            score = -self.alpha_beta_score(next_state, 3 - stone, -math.inf, -alpha, depth - 1)
+            if score > alpha:
+                alpha = score
+                best_action = action
+        return best_action if best_action else None  # Noneを返す
+
+    def get_legal_actions(self, state, stone):
+        """
+        石を置ける全ての合法手を取得
+        """
+        legal_actions = []
+        for y in range(len(state)):
+            for x in range(len(state[0])):
+                if can_place_x_y(state, stone, x, y):
+                    legal_actions.append((x, y))
+        return legal_actions
+
+    def evaluate_state(self, state, stone):
+        """
+        状態の評価関数: 盤面のスコアを計算
+        """
+        black, white = count_stone(state)
+        return black - white if stone == BLACK else white - black
+
     def place(self, board, stone):
         """
-        最も良い手を選択する（次のターンの相手の手を考慮し、コーナーを重視）
+        Alpha-Beta法で最善手を選択
         """
-        best_x, best_y = -1, -1
-        best_score = float("-inf")
-
-        opponent = 3 - stone  # 相手の石
-        board_size = len(board)
-
-        # コーナーの座標リスト
-        corners = [(0, 0), (0, board_size - 1), (board_size - 1, 0), (board_size - 1, board_size - 1)]
-
-        for y in range(board_size):
-            for x in range(board_size):
-                if not can_place_x_y(board, stone, x, y):
-                    continue
-
-                # 仮の盤面で石を置く
-                simulated_board = copy(board)
-                move_stone(simulated_board, stone, x, y)
-
-                # 自分の石の数を計算
-                my_black, my_white = count_stone(simulated_board)
-                my_score = my_black if stone == BLACK else my_white
-
-                # 次のターンで相手が取れる最大の石の数を計算
-                opponent_best_score = float("-inf")
-                for oy in range(board_size):
-                    for ox in range(board_size):
-                        if not can_place_x_y(simulated_board, opponent, ox, oy):
-                            continue
-                        opponent_simulated_board = copy(simulated_board)
-                        move_stone(opponent_simulated_board, opponent, ox, oy)
-                        opp_black, opp_white = count_stone(opponent_simulated_board)
-                        opp_score = opp_black if opponent == BLACK else opp_white
-                        opponent_best_score = max(opponent_best_score, opp_score)
-
-                # スコアの評価: 自分のスコア - 次のターンで相手が得られるスコア
-                final_score = my_score - opponent_best_score
-
-                # コーナーなら優先度を大幅に上げる
-                if (x, y) in corners:
-                    final_score += 100
-
-                # 最善手を更新
-                if final_score > best_score:
-                    best_score = final_score
-                    best_x, best_y = x, y
-
-        return best_x, best_y
+        action = self.alpha_beta_action(board, stone, depth=4)  # 深さは4で探索
+        return action if action else (-1, -1)  # 最善手がない場合に備えた保険
     
 def draw_board(canvas, board):
     ctx = canvas.getContext("2d")
